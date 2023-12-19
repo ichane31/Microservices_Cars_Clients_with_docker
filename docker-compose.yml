@@ -1,0 +1,65 @@
+version: '3'
+
+services:
+  eureka-server:
+    container_name: eureka_server
+    build:
+      context: ./eureka-server
+      dockerfile: Dockerfile
+    ports:
+      - "8761:8761"
+
+  mysqldb:
+    container_name: mysqldb
+    image: mysql
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_DATABASE: test
+      MYSQL_ROOT_PASSWORD: root
+
+  client-service:
+    container_name: client_service
+    build:
+      context: ./client-service
+      dockerfile: Dockerfile
+    ports:
+      - "8088:8088"
+    depends_on:
+      - mysqldb
+    environment:
+      SPRING_APPLICATION_JSON: '{
+             "spring.datasource.url"  : "jdbc:mysql://mysqldb:3306/service_clients",
+             "spring.datasource.username" : "root",
+             "spring.datasource.password" : "root",
+             "spring.jpa.hibernate.ddl-auto" : "update",
+             "spring.jpa.properties.hibernate.dialect":"org.hibernate.dialect.MySQLDialect"
+           }'
+
+  car-service:
+    container_name: car_service
+    build:
+      context: ./car-service
+      dockerfile: Dockerfile
+    ports:
+      - "8089:8089"
+    depends_on:
+      - mysqldb
+    environment:
+      SPRING_APPLICATION_JSON: '{
+             "spring.datasource.url"  : "jdbc:mysql://mysqldb:3306/service_voitures",
+             "spring.datasource.username" : "root",
+             "spring.datasource.password" : "root",
+             "spring.jpa.hibernate.ddl-auto" : "update",
+             "spring.jpa.properties.hibernate.dialect":"org.hibernate.dialect.MySQLDialect"
+           }'
+  gateway-service:
+    container_name: gateway_service
+    build:
+      context: ./gateway-service
+      dockerfile: Dockerfile
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8888:8888"
+
